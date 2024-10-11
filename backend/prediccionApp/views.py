@@ -139,11 +139,12 @@ def predecir_recomendacion(request):
     resultados['satisfaccion'] = {
         'general': df['satisfaccion_personal'].value_counts().to_dict(),
         'por_edad': {
-            str(k): v.to_dict()  # Convertir claves de tuplas a cadenas
+            str(k): {f"{k} - {satisfaccion}": count for satisfaccion, count in v.items()}
             for k, v in df.groupby('edad')['satisfaccion_personal'].value_counts().groupby(level=0)
         },
         'calidad_servicio': df['calidad_servicio'].value_counts().to_dict(),
         'intencion_cambio': df['cambiar_banco'].value_counts().to_dict()
     }
-
-    return JsonResponse(resultados)
+    resultados_serializables = {str(key): value for key, value in resultados.items()}
+    print(resultados)  # Agregar esta línea para depuración
+    return JsonResponse(resultados_serializables)
