@@ -3,9 +3,12 @@ from django.http import JsonResponse
 from .db_connection import obtener_conexion, cerrar_conexion
 from mysql.connector import Error
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import LabelEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.cluster import KMeans
 import numpy as np
@@ -87,23 +90,56 @@ def predecir_recomendacion(request):
 
     # Codificación de variables
     le = LabelEncoder()
+    
+    # Aplicar LabelEncoder a X
     for column in X.columns:
         X[column] = le.fit_transform(X[column])
+
+    # Codificar y y verificar clases
     y = le.fit_transform(y)
 
-    # División y entrenamiento
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
+    # Verificar clases únicas
+    print("Clases de y:", np.unique(y))  # Para depuración, verifica las clases de y
+
+    # Dividir los datos
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Preprocesamiento y modelo
+    numerical_features = ['calidad_servicio', 'satisfaccion_personal', 'personal_capacitado']
+    categorical_features = ['facilidad_canales_digitales', 'rapidez_respuesta', 'resolucion_primer_contacto']
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', StandardScaler(), numerical_features),
+            ('cat', OneHotEncoder(), categorical_features)
+        ])
+
+    model = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('classifier', XGBClassifier(use_label_encoder=False, eval_metric='mlogloss'))
+    ])
+
+    # Definir la cuadrícula de hiperparámetros para la búsqueda
+    param_grid = {
+        'classifier__n_estimators': [100, 200],
+        'classifier__learning_rate': [0.01, 0.1, 0.2],
+        'classifier__max_depth': [3, 5, 7]
+    }
+
+    # Realizar la búsqueda de hiperparámetros con validación cruzada
+    grid_search = GridSearchCV(model, param_grid, cv=5, scoring='accuracy')
+    grid_search.fit(X_train, y_train)
+
+    # Obtener el mejor modelo
+    best_model = grid_search.best_estimator_
 
     # Predicciones y evaluación
-    y_pred = model.predict(X_test)
+    y_pred = best_model.predict(X_test)
     accuracy = float(accuracy_score(y_test, y_pred))
 
     # Importancia de características
     feature_importance = dict(zip(features_principales, 
-                                [float(imp) for imp in model.feature_importances_]))
+                                [float(imp) for imp in best_model.named_steps['classifier'].feature_importances_]))
 
     resultados['predicciones'] = {
         'precision_modelo': accuracy,
@@ -115,6 +151,7 @@ def predecir_recomendacion(request):
     features_perfil = ['edad', 'frecuencia_uso', 'preferencia_atencion']
     X_perfil = df[features_perfil].copy()
     
+    # Codificar X_perfil
     for column in X_perfil.columns:
         X_perfil[column] = le.fit_transform(X_perfil[column])
 
@@ -145,6 +182,7 @@ def predecir_recomendacion(request):
         'calidad_servicio': df['calidad_servicio'].value_counts().to_dict(),
         'intencion_cambio': df['cambiar_banco'].value_counts().to_dict()
     }
+    
     resultados_serializables = {str(key): value for key, value in resultados.items()}
     print(resultados)  # Agregar esta línea para depuración
     return JsonResponse(resultados_serializables)
