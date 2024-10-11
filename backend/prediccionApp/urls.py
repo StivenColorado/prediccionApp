@@ -1,7 +1,8 @@
 from django.urls import path
-from . import views
+from .views import index, obtener_encuestas, predecir_recomendacion
 
 urlpatterns = [
-    path('', views.index, name='index'),  # Vista por defecto
-    path('encuestas/', views.obtener_encuestas, name='obtener_encuestas'),
+    path('', index, name='index'),
+    path('encuestas/', obtener_encuestas, name='obtener_encuestas'),
+    path('predecir/', predecir_recomendacion, name='predecir_recomendacion'),
 ]
