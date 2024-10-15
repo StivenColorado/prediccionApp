@@ -5,146 +5,95 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Análisis Bancario</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-
-        .dashboard {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .metric {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2563eb;
-            margin-top: 10px;
-        }
-
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #1f2937;
-        }
-
         .loading {
-            text-align: center;
-            padding: 20px;
-            font-size: 18px;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-
-        .profile-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .profile-card {
-            background-color: #f8fafc;
-            padding: 15px;
-            border-radius: 6px;
-        }
-
-        .profile-info {
-            margin-top: 10px;
-            font-size: 14px;
-        }
-
-        .profile-info p {
-            margin: 5px 0;
+            display: none; /* Ocultar por defecto */
         }
     </style>
 </head>
-<body>
-    <div class="dashboard">
-        <div class="header">
-            <h1>Dashboard de Análisis Bancario</h1>
-            <p id="total-encuestas">Cargando datos...</p>
+<body class="bg-gray-100">
+    <div class="dashboard max-w-7xl mx-auto p-6">
+        <div class="header bg-white p-6 rounded-lg shadow-md mb-6">
+            <h1 class="text-2xl font-bold">Dashboard de Análisis Bancario</h1>
+            <p id="total-encuestas" class="text-gray-700">Cargando datos...</p>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <h2 class="card-title">Precisión del Modelo</h2>
-                <div id="precision" class="metric">--</div>
+        <!-- Loader -->
+        <div id="loader" class="loading fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="loader animate-spin rounded-full h-16 w-16 border-b-4 border-blue-400"></div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="card bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold">Precisión del Modelo</h2>
+                <div id="precision" class="text-3xl text-blue-600 mt-2">--</div>
             </div>
-            <div class="card">
-                <h2 class="card-title">Factores Importantes</h2>
-                <div class="chart-container">
+            <div class="card bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold">Factores Importantes</h2>
+                <div class="chart-container relative" style="height: 300px;">
                     <canvas id="factoresChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <div class="card">
-            <h2 class="card-title">Perfiles de Clientes</h2>
-            <div id="perfiles" class="profile-grid">
+        <div class="card bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold">Perfiles de Clientes</h2>
+            <div id="perfiles" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                 <!-- Los perfiles se cargarán dinámicamente -->
             </div>
         </div>
 
-        <div class="grid">
-            <div class="card">
-                <h2 class="card-title">Satisfacción General</h2>
-                <div class="chart-container">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold">Satisfacción General</h2>
+                <div class="chart-container relative" style="height: 300px;">
                     <canvas id="satisfaccionChart"></canvas>
                 </div>
             </div>
-            <div class="card">
-                <h2 class="card-title">Calidad del Servicio</h2>
-                <div class="chart-container">
+            <div class="card bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold">Calidad del Servicio</h2>
+                <div class="chart-container relative" style="height: 300px;">
                     <canvas id="calidadChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
+
+    <footer class="bg-white rounded-lg shadow m-4 dark:bg-gray-800">
+        <div class="w-full mx-auto max-w-screen-xl p-4 md:flex md:items-center md:justify-between">
+          <span class="text-sm text-gray-500 sm:text-center dark:text-gray-400">© 2023 <a href="#" class="hover:underline">Prediccion bancario</a>. All Rights Reserved.
+        </span>
+        <ul class="flex flex-wrap items-center mt-3 text-sm font-medium text-gray-500 dark:text-gray-400 sm:mt-0 gap-4">
+            <li>
+                <a href="#" class="hover:underline me-4 md:me-6">< Desarrollado por Stiven Colorado/> </a>
+            </li>
+            <li>
+                <a href="#" class="hover:underline me-4 md:me-6">3218956487</a>
+            </li>
+            <li>
+                <a href="#" class="hover:underline">Desarrollado con IA </a>
+            </li>
+        </ul>
+        </div>
+    </footer>
+    
     <script>
         // Función para cargar los datos
         async function cargarDatos() {
+            // Mostrar el loader
+            document.getElementById('loader').style.display = 'flex';
+
             try {
                 const response = await fetch('/predecir/');
                 const datos = await response.json();
                 actualizarDashboard(datos);
             } catch (error) {
                 console.error('Error al cargar los datos:', error);
+            } finally {
+                // Ocultar el loader
+                document.getElementById('loader').style.display = 'none';
             }
         }
 
@@ -187,10 +136,10 @@
             
             Object.entries(datos.perfiles).forEach(([perfil, info]) => {
                 const perfilCard = document.createElement('div');
-                perfilCard.className = 'profile-card';
+                perfilCard.className = 'bg-gray-50 p-4 rounded-lg shadow-sm';
                 perfilCard.innerHTML = `
-                    <h3>${perfil.replace('_', ' ').toUpperCase()}</h3>
-                    <div class="profile-info">
+                    <h3 class="font-semibold text-lg">${perfil.replace('_', ' ').toUpperCase()}</h3>
+                    <div class="profile-info mt-2 text-sm">
                         <p><strong>Tamaño:</strong> ${info.tamaño}</p>
                         <p><strong>Edad común:</strong> ${info.edad_comun}</p>
                         <p><strong>Frecuencia:</strong> ${info.frecuencia_uso_tipica}</p>

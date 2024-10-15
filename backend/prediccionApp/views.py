@@ -86,20 +86,25 @@ def predecir_recomendacion(request):
     ]
 
     X = df[features_principales].copy()
-    y = df['recomendaria_banco']
+    y = df['recomendaria_banco'].copy()
 
     # Codificación de variables
     le = LabelEncoder()
-    
-    # Aplicar LabelEncoder a X
+
+    # Aplicar LabelEncoder a X y codificar y
     for column in X.columns:
-        X[column] = le.fit_transform(X[column])
+        if X[column].dtype == 'object':  # Solo aplicar a columnas categóricas
+            X[column] = le.fit_transform(X[column])
 
     # Codificar y y verificar clases
     y = le.fit_transform(y)
 
     # Verificar clases únicas
     print("Clases de y:", np.unique(y))  # Para depuración, verifica las clases de y
+
+    # Ajustar y si es necesario (si las clases son [1, 2, 3, 4, 5])
+    if np.array_equal(np.unique(y), np.array([1, 2, 3, 4, 5])):
+        y = y - 1  # Cambiar a [0, 1, 2, 3, 4]
 
     # Dividir los datos
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -153,7 +158,8 @@ def predecir_recomendacion(request):
     
     # Codificar X_perfil
     for column in X_perfil.columns:
-        X_perfil[column] = le.fit_transform(X_perfil[column])
+        if X_perfil[column].dtype == 'object':  # Solo aplicar a columnas categóricas
+            X_perfil[column] = le.fit_transform(X_perfil[column])
 
     kmeans = KMeans(n_clusters=3, random_state=42)
     clusters = kmeans.fit_predict(X_perfil)
